@@ -7,3 +7,8 @@ edge took 514 ms on 760x800 image with 3x3 filter
 sharp took 511 ms on 760x800 image with 3x3 filter
 gauss took 15914 ms on 760x800 image with 21x21 filter
 avg took 17513 ms on 760x800 image with 21x21 filter
+gauss took 15914 ms on 760x800 image with 10x10 filter
+
+
+With FastBlur of PhotoShop
+[debug] convultion filter took 410 ms on 760x800 image resolution with 10x10 filter

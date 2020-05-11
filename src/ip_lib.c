@@ -11,9 +11,13 @@
 #define max2(x, y) (((x) > (y)) ? (x) : (y))
 #define min2(x, y) (((x) < (y)) ? (x) : (y))
 
+// set it 1 if want to use fast blur insted classic convolve gauss
+#define USE_GAUSS_FASTBLUR_INSTEAD 0
+#define FAST_BLUR_ID -49
+
 // triple for that iterates a ip_mat "t"
 // i for rows, j for columns, k for channels
-#define ipmatloop(t,i,j,_k) for(int i=0;i<(t->h);i++) for(int j=0;j<(t->w);j++) for(int _k=0;_k<(t->k);_k++)
+#define ipmatloop(t,i,j,_k) for(int _k=0;_k<(t->k);_k++) for(int i=0;i<(t->h);i++) for(int j=0;j<(t->w);j++)
 
 /**
  * Print bitmap matrix rappresentation.
@@ -97,7 +101,10 @@ Bitmap * ip_mat_to_bitmap(ip_mat * t){
 */
 float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k){
     if(i<a->h && j<a->w &&k<a->k) return a->data[i][j][k];
-    else onError("get_val");
+    else{
+        printf("uscito da %dx%d con %d : %d\n",a->h,a->w,i,j);
+        onError("get_val");
+    }
     return -1.0;
 }
 /**
@@ -106,7 +113,10 @@ float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k){
 */
 void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v){
     if(i<a->h && j<a->w &&k<a->k) a->data[i][j][k]=v;
-    else onError("set_val");
+    else {
+        printf("uscito da %dx%d con %d : %d\n",a->h,a->w,i,j);
+        onError("set_val");
+    }
 }
 
 /**
@@ -399,11 +409,114 @@ ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){
     return clone;
 }
 
+ip_mat * fastBoxBlur(ip_mat * img, int radius) {
+
+    printf("raggiuooo = %d \n",radius);
+
+    int kSize=radius; 
+    if (kSize%2==0)kSize++;
+    ip_mat * Hblur = ip_mat_copy(img);
+    float Avg =(float)1/kSize;
+
+    for (int j=0;j<img->h;j++) {
+        float hSum[3] = {0.0f,0.0f,0.0f};
+        float iAvg[3] = {0.0f,0.0f,0.0f};
+
+        for (int x=0;x<kSize;x++) 
+            for(int k=0;k<img->k;k++)
+                hSum[k] += get_val(img,j,x,k); 
+
+        for(int k=0;k<img->k;k++)
+            iAvg[k] = hSum[k] * Avg;
+
+        for (int i=0;i<img->w;i++) {
+            
+            if((i+1+kSize/2<img->w && i-kSize/2 >= 0) && j>=0 && j<img->h){
+                for(int k=0;k<img->k;k++)
+                    hSum[k] -= get_val(img,j,i-kSize/2,k); 
+
+                for(int k=0;k<img->k;k++)
+                    hSum[k] += get_val(img,j,i+1 + kSize/2,k); 
+
+                for(int k=0;k<img->k;k++)
+                    iAvg[k] = hSum[k] * Avg;
+            }
+
+            for(int k=0;k<img->k;k++)
+                set_val(Hblur,j,i,k,iAvg[k]);
+        }
+    }
+
+    ip_mat * total = ip_mat_copy(Hblur);
+
+    for (int i=0;i<total->w;i++) {
+        float tSum[3] = {0.0f,0.0f,0.0f};
+        float iAvg[3] = {0.0f,0.0f,0.0f};
+
+        for (int y=0;y<kSize;y++) 
+            for(int k=0;k<total->k;k++)
+                tSum[k] += get_val(total,y,i,k); 
+
+        for(int k=0;k<total->k;k++)
+            iAvg[k] = tSum[k] * Avg;
+
+        for (int j=0;j<Hblur->h;j++) {
+            if(  (j-kSize/2)>=0 && (j+1+kSize/2)<Hblur->h && i<Hblur->w){
+                for(int k=0;k<Hblur->k;k++)
+                    tSum[k] -= get_val(Hblur,j-kSize/2,i,k); 
+
+                for(int k=0;k<Hblur->k;k++)
+                    tSum[k] += get_val(Hblur,j+1+kSize/2,i,k); 
+
+                for(int k=0;k<Hblur->k;k++)
+                    iAvg[k] = tSum[k] * Avg;
+            }
+            for(int k=0;k<Hblur->k;k++)
+                set_val(total,j,i,k,iAvg[k]);
+        }
+    }
+    
+    return total;
+}
+
+void boxesForGaussian(double sigma, int n,int* sizes) {
+    double wIdeal = sqrt((12 * sigma * sigma / n) + 1);
+    int wl = floor(wIdeal);
+    if (wl%2 == 0) wl--;
+    double wu = wl + 2;
+    double mIdeal=(12*sigma*sigma-n*wl*wl-4*n*wl-3*n)/(-4*wl-4);
+    int m = round(mIdeal);
+    printf("wl : %d\n",wl);
+    printf("wu : %d\n",wu);
+
+    for (int i = 0; i < n; i++) {
+        if (i < m) {
+            sizes[i] = (int) wl;
+        } else {
+            sizes[i] = (int) wu;
+        }
+    }
+    printf("\n");
+}
+
+ip_mat * fastGaussianBlur(ip_mat * src, int Raduis) {
+    int bxs[3] = {0,0,0};
+    boxesForGaussian(Raduis,3,&bxs);
+    printf("ciaoo val : %d %d %d ",bxs[0],bxs[1],bxs[2]);
+    ip_mat * img = fastBoxBlur(src, bxs[0]);
+    return img;
+ }
+
 /* Effettua la convoluzione di un ip_mat "a" con un ip_mat "f".
  * La funzione restituisce un ip_mat delle stesse dimensioni di "a".
+ * Per il filtro di gauss si può decidere di usare un algoritmo di fast-blur
+ * alternativo alla classica convoluzione.
+ * Estremamente più veloce.
  * */
 ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){
-
+    if(USE_GAUSS_FASTBLUR_INSTEAD && get_val(f,0,0,0) == FAST_BLUR_ID)
+        return fastGaussianBlur(a,21);
+    
     struct timeval stop, start;
     gettimeofday(&start, NULL);
     
@@ -459,6 +572,13 @@ ip_mat * create_average_filter(int w, int h, int k){
 
 /* Crea un filtro gaussiano per la rimozione del rumore */
 ip_mat * create_gaussian_filter(int w, int h, int k, float sigma){ // 1
+    if(USE_GAUSS_FASTBLUR_INSTEAD){
+        const float mat2[3][3] = {{FAST_BLUR_ID,-1,0},{-1,1,1},{0,1,2}};
+        return to_ip_mat((float *)mat2,3,3,1);
+    }
+    
+    w+=w%2!=0;
+    h+=h%2!=0;
 
     float mat[h][w];double r, s = 2.0 * sigma * sigma;double sum = 0.0;
     for (int x = -(h/2); x <= h/2; x++) {
@@ -480,6 +600,7 @@ ip_mat * create_gaussian_filter(int w, int h, int k, float sigma){ // 1
 
     return to_ip_mat((float *)mat,h,w,k);
 }
+
 
 /* Effettua una riscalatura dei dati tale che i valori siano in [0,new_max].
  * Utilizzate il metodo compute_stat per ricavarvi il min, max per ogni canale.

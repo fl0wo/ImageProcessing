@@ -13,6 +13,8 @@ How to compile this project?
 copy paste examples : 
 once build has done, enter in src/target and run :
 
+Linux : 
+
 Emboss Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp emboss ./images_export/try_emboss.bmp 1
 
@@ -30,3 +32,27 @@ Gaussian Filter :
 
 Avg Filter : 
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp avg ./images_export/try_avg.bmp 1 5
+
+
+
+
+Windows :
+
+Emboss Filter :
+./a.exe ./images/fullmoon.bmp ./images/mongolfiere.bmp emboss ./export/try_emboss.bmp 1
+
+Edge Filter :
+./a.exe ./images/fullmoon.bmp ./images/mongolfiere.bmp edge ./export/try_edge.bmp 1
+
+Sharp Filter :
+./a.exe ./images/fullmoon.bmp ./images/mongolfiere.bmp sharp ./export/try_sharp.bmp 1
+
+Corrupt Filter :
+./a.exe ./images/fullmoon.bmp ./images/mongolfiere.bmp corrupt ./export/try_corrupt.bmp 1 40
+
+Gaussian Filter :
+./a.exe ./images/fullmoon.bmp ./images/mongolfiere.bmp gauss ./export/try_gauss.bmp 1 13 10
+
+Avg Filter :
+./a.exe ./images/fullmoon.bmp ./images/mongolfiere.bmp avg ./export/try_avg.bmp 1 5
+

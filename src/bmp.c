@@ -12,7 +12,6 @@
 #include <float.h>
 #include <assert.h>
 
-
 #ifdef USESDL
 #  ifdef ANDROID
 #    include <SDL.h>
@@ -208,12 +207,11 @@ Bitmap *bm_create(int w, int h) {
 
     return b;
 }
-/* Yes, it compiles with the Tiny C Compiler, but without SIMD */
-
 
 #if defined(USESTB)
 #  define STB_IMAGE_IMPLEMENTATION
 #  ifdef __TINYC__
+/* Yes, it compiles with the Tiny C Compiler, but without SIMD */
 #    define STBI_NO_SIMD
 #  endif
 #  ifndef STBI_INCLUDE_STB_IMAGE_H
@@ -221,7 +219,6 @@ Bitmap *bm_create(int w, int h) {
 #    undef STB_IMAGE_IMPLEMENTATION
 #  endif
 #endif
-
 
 /* Wraps around the stdio functions, so I don't have to duplicate my code
     for SDL2's RWops support.
@@ -673,11 +670,10 @@ static Bitmap *bm_load_bmp_rd(BmReader rd) {
     /* 1. calculate how many bits we have to shift after masking */
     /* 2. calculate the bit depth of the input channels */
     /* 3. calculate the factor that maps the channel to 0-255 */
-    int ciao = 0;
-    for (;ciao < 3; ++ciao) {
-        rgbshift[ciao] = count_trailing_zeroes(rgbmask[ciao]);
-        uint32_t chdepth = rgbmask[ciao] >> rgbshift[ciao];
-        rgbcorr[ciao] = chdepth ? 255.0f / chdepth : 0.0f;
+    for (int i = 0; i < 3; ++i) {
+        rgbshift[i] = count_trailing_zeroes(rgbmask[i]);
+        uint32_t chdepth = rgbmask[i] >> rgbshift[i];
+        rgbcorr[i] = chdepth ? 255.0f / chdepth : 0.0f;
     }
 
 
@@ -5713,11 +5709,6 @@ int bm_puts(Bitmap *b, int x, int y, const char *text) {
         return 0;
     return b->font->puts(b, x, y, text);
 }
-/*
-int main(){
-    printf("ciaooo\n");
-    return 0;
-}*/
 
 int bm_printf(Bitmap *b, int x, int y, const char *fmt, ...) {
     char buffer[256];

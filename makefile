@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -lm
-CFLAGS_MAIN=-Wall -ansi --pedantic -lm -g3 -O3 -fsanitize=address -fsanitize=undefined -lasan -std=gnu89 -Wextra
+CFLAGS_MAIN=-Wall -ansi --pedantic -lm -g3 -O3  -std=gnu89 -Wextra
 
 a : src/main_iplib.c src/lib/bmp.o src/lib/ip_lib.o
 	$(CC) $^ -o $@ $(CFLAGS_MAIN)

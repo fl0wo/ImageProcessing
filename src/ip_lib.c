@@ -10,25 +10,41 @@
 #define max2(x, y) (((x) > (y)) ? (x) : (y))
 #define min2(x, y) (((x) < (y)) ? (x) : (y))
 
+#define DEBUG_ON 1
+
 // set it 1 if want to use fast blur insted classic convolve gauss
 #define USE_GAUSS_FASTBLUR_INSTEAD 0
 #define FAST_BLUR_ID -49
 
+typedef unsigned int ui;
+
 // triple for that iterates a ip_mat "t"
 // i for rows, j for columns, k for channels
-#define ipmatloop(t,i,j,_k) for(int _k=0;_k<(t->k);_k++)for(int i=0;i<(t->h);i++)for(int j=0;j<(t->w);j++)
+#define ipmatloop(t,i,j,_k) ui i,j,_k;for(_k=0;_k<(t->k);_k++)for(i=0;i<(t->h);i++)for(j=0;j<(t->w);j++)
 
 // macros for timer clock
 #define START_TIMER struct timeval stop, start;gettimeofday(&start, NULL);
-#define END_TIMER(mat) gettimeofday(&stop, NULL); long udelay = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec; printf("[debug] convultion filter took %ld ms on %dx%d image resolution\n",udelay/1000,mat->h,mat->w); 
+#define END_TIMER(mat) gettimeofday(&stop, NULL); long udelay = (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec; if(!DEBUG_ON)printf("[debug] convultion filter took %ld ms on %dx%d image resolution\n",udelay/1000,mat->h,mat->w); 
+
+// Stdout tracking of memory usage
+#define MAX_MAT 100
+unsigned cur_ip_mat_created=0;
+ip_mat * stack[MAX_MAT];
 
 int ip_mat_check_dims(ip_mat * a, ip_mat * b){return (a->h)==(b->h) && (a->w)==(b->w) && (a->k)==(b->k);}
+
+int indexOf(ip_mat * x){
+    for(int i=0;i<MAX_MAT;i++)
+        if(stack[i]==x)
+            return i;
+    return -1;
+}
 
 /**
  * Print bitmap matrix rappresentation.
 */
 void ip_mat_show(ip_mat * t){
-    unsigned int i,l,j;
+    ui i,l,j;
     printf("Matrix of size %d x %d x %d (hxwxk)\n",t->h,t->w,t->k);
     for (l = 0; l < t->k; l++) {
         printf("Slice %d\n", l);
@@ -46,7 +62,7 @@ void ip_mat_show(ip_mat * t){
  * Print stats of gien ip_mat
 */
 void ip_mat_show_stats(ip_mat * t){
-    unsigned int k;
+    ui k;
     compute_stats(t);
     for(k=0;k<t->k;k++){
         printf("Channel %d:\n", k);
@@ -69,13 +85,13 @@ void onError(char* method){
  * Converts a given bitmap to a ip_mat struct.
 */
 ip_mat * bitmap_to_ip_mat(Bitmap * img){
-    unsigned int i=0,j=0;
+    ui i=0,j=0;
     unsigned char R,G,B;
-    unsigned int h = img->h;
-    unsigned int w = img->w;
+    ui h = img->h;
+    ui w = img->w;
     ip_mat * out = ip_mat_create(h, w,3,0);
-    for (i = 0; i < h; i++){
-        for (j = 0; j < w; j++){
+    for (i=0;i<h;i++){
+        for (j=0;j<w;j++){
             bm_get_pixel(img, j,i,&R, &G, &B);
             set_val(out,i,j,0,(float) R);
             set_val(out,i,j,1,(float) G);
@@ -90,10 +106,10 @@ ip_mat * bitmap_to_ip_mat(Bitmap * img){
  * Converts a ip_mat to a Bitmap.
 */
 Bitmap * ip_mat_to_bitmap(ip_mat * t){
-    Bitmap *b = bm_create(t->w,t->h);
-    unsigned int i, j;
-    for (i = 0; i < t->h; i++){
-        for (j = 0; j < t->w; j++){
+    Bitmap *b=bm_create(t->w,t->h);
+    ui i,j;
+    for (i=0;i<t->h;i++){
+        for (j=0;j<t->w;j++){
             bm_set_pixel(b, j,i, (unsigned char) get_val(t,i,j,0),
                     (unsigned char) get_val(t,i,j,1),
                     (unsigned char) get_val(t,i,j,2));
@@ -106,10 +122,10 @@ Bitmap * ip_mat_to_bitmap(ip_mat * t){
  * Return value cell of a ip_mat (i-row j-column k-channel)
  * j>=0 and k>=0 and i>=0 is non sense
 */
-float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k){
+float get_val(ip_mat * a, ui i,ui j,ui k){
     if(i<a->h && j<a->w &&k<a->k) return a->data[i][j][k];
     else{
-        printf("uscito da %dx%d con %d : %d\n",a->h,a->w,i,j);
+        if(DEBUG_ON) printf("[err] uscito da %dx%d con %d : %d\n",a->h,a->w,i,j);
         onError("get_val");
     }
     return -1.0;
@@ -118,10 +134,10 @@ float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k){
  * Sets value to a cell of an ip_mat (i-row j-column k-channel)
  * j>=0 and k>=0 and i>=0 is non sense
 */
-void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v){
+void set_val(ip_mat * a, ui i,ui j,ui k, float v){
     if(i<a->h && j<a->w &&k<a->k) a->data[i][j][k]=v;
     else {
-        printf("uscito da %dx%d con %d : %d\n",a->h,a->w,i,j);
+        if(DEBUG_ON) printf("[err] uscito da %dx%d con %d : %d\n",a->h,a->w,i,j);
         onError("set_val");
     }
 }
@@ -133,7 +149,7 @@ float get_normal_random(float media, float std){
     float y1 = ( (float)(rand()) + 1. )/( (float)(RAND_MAX) + 1. );
     float y2 = ( (float)(rand()) + 1. )/( (float)(RAND_MAX) + 1. );
     float num = cos(2*PI*y2)*sqrt(-2.*log(y1));
-    return media + num*std;
+    return media+num*std;
 }
 
 /**
@@ -142,8 +158,8 @@ float get_normal_random(float media, float std){
  * w : number of columns
  * k : number of channel (usually 3)
 */
-ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned int k, float v){
-    unsigned int i,j,l;
+ip_mat * ip_mat_create(ui h, ui w,ui k, float v){
+    ui i,j,l;
     ip_mat * ipmat = (ip_mat *) malloc(sizeof(ip_mat));
     ipmat->h = h;ipmat->w = w;ipmat->k = k;
     ipmat->stat = (stats *) malloc(sizeof(stats) * k);
@@ -156,13 +172,21 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned int k, float v){
                 set_val(ipmat, i,j,l, v);
         }
     }
+
+    if(DEBUG_ON){
+        stack[cur_ip_mat_created]=ipmat;
+        for(int i=0;i<cur_ip_mat_created;i++)printf(".\t");
+        printf("creating mat %c\n",(cur_ip_mat_created+'A'));
+        cur_ip_mat_created++;
+    }
+
     return ipmat;
 }
 
 /* Libera la memoria (data, stat e la struttura) */
 void ip_mat_free(ip_mat *a) {
     if(a){
-        unsigned int i,j;
+        ui i,j;
         free(a->stat);
         for(i=0; i<a->h; i++) {
             for(j=0; j<a->w; j++)
@@ -171,6 +195,13 @@ void ip_mat_free(ip_mat *a) {
         }
         free(a->data);
         free(a);
+
+        if(DEBUG_ON){
+            int tab=indexOf(a);
+            if(tab<0)return;
+            for(int i=0;i<tab;i++) printf(".\t");
+            printf("deleting mat %c\n",(tab+'A'));
+        }
     }
 }
 
@@ -229,7 +260,7 @@ ip_mat * ip_mat_copy(ip_mat * t){
  * Return subset of the matrix.
  * t->data[row_start...row_end][col_start...col_end][0...k] (taking all channels)
  */
-ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end, unsigned int col_start, unsigned int col_end){
+ip_mat * ip_mat_subset(ip_mat * t, ui row_start, ui row_end, ui col_start, ui col_end){
     int sub_width = col_end - col_start;
     int sub_height = row_end - row_start;
     if(sub_width<0 || sub_height<0) onError("ip_mat_subset parameters!");
@@ -351,7 +382,6 @@ ip_mat * ip_mat_to_gray_scale(ip_mat * a){
 /* Effettua la fusione (combinazione convessa) di due immagini */
 ip_mat * ip_mat_blend(ip_mat * a, ip_mat * b, float alpha){
     if(!ip_mat_check_dims(a,b)) onError("ip_mat_blend not same dimension");
-    printf("same dim : %d", ip_mat_check_dims(a,b));
     ip_mat * clone = ip_mat_create(a->h,a->w,a->k,0.0F);
     ipmatloop(clone,i,j,k)
         set_val(clone,i,j,k,(alpha * get_val(a,i,j,k) + (1-alpha) * get_val(b,i,j,k)));
@@ -381,7 +411,7 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount) {
     ip_mat_init_random(randomBtm,0,255*255);
     ipmatloop(cloneA,i,j,k)
         set_val(cloneA,i,j,k, get_val(cloneA,i,j,k) +  get_val(randomBtm,i,j,k) * amount);
-
+    ip_mat_free(randomBtm);
     return cloneA;
 }
 /*
@@ -409,7 +439,7 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount) {
  * con valori nulli sui bordi corrispondenti al padding e l'immagine "a" riportata
  * nel centro
  * */
-ip_mat * ip_mat_padding(ip_mat * a, unsigned int pad_h, unsigned int pad_w){
+ip_mat * ip_mat_padding(ip_mat * a, ui pad_h, ui pad_w){
     ip_mat * clone = ip_mat_create(a->h + pad_h*2,a->w + 2*pad_w,a->k,0.0F);
     for(int i=pad_h;i<a->h + pad_h;i++)
         for(int j=pad_w;j<a->w + pad_w;j++)
@@ -441,13 +471,8 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){
         return fastBlur;
     }
 
-    printf("f : %d , %d , %d\n",f->h,f->w,f->k);
-
     ip_mat* with_pad = ip_mat_padding(a, (f->h-1)/2 + 1, (f->w-1)/2 + 1);
     ip_mat* answ = ip_mat_create(a->h,a->w,a->k,0.0F);
-
-    printf("with_pad : %d , %d , %d\n",with_pad->h,with_pad->w,with_pad->k);
-    printf("answ : %d , %d , %d\n",answ->h,answ->w,answ->k);
 
     ipmatloop(answ,i,j,k){
         float media = 0;
@@ -492,13 +517,13 @@ ip_mat * create_emboss_filter(){
 }
 
 /* Crea un filtro medio per la rimozione del rumore */
-ip_mat * create_average_filter(unsigned int w,unsigned int h,unsigned int k){
+ip_mat * create_average_filter(ui w,ui h,ui k){
     float mat[h][w];float c=1.0/(w*h);for(int i=0;i<h;i++)for(int j=0;j<w;j++) mat[i][j]=c;
     return to_ip_mat((float *)mat,h,w,DESIDERED_CANALS_FILTER);
 }
 
 /* Crea un filtro gaussiano per la rimozione del rumore */
-ip_mat * create_gaussian_filter(unsigned int wu,unsigned int hu,unsigned int ku, float sigma){ // 1
+ip_mat * create_gaussian_filter(ui wu,ui hu,ui ku, float sigma){ // 1
     int w=wu,h=hu,k=ku;
     if(USE_GAUSS_FASTBLUR_INSTEAD){
         const float mat2[3][3] = {{FAST_BLUR_ID,-1,0},{-1,1,1},{0,1,2}};
@@ -557,14 +582,13 @@ void clamp(ip_mat * t, float low, float high){
 /////////// FILTRO AGGIUNTIVO ///////////////
 
 
-
 /**
  * Per puro divertimento è stato creato un algoritmo alternativo al gauss per l'effetto "sfuocato"
  * 
  */
 ip_mat * fastBoxBlur(ip_mat * img, int radius) {
 
-    printf("raggiuooo = %d \n",radius);
+    printf("Fast Blur Activated = %d \n",radius);
 
     if (radius%2==0)radius++;
     ip_mat * hor_blur = ip_mat_copy(img);

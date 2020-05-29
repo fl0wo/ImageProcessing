@@ -1,36 +1,36 @@
 How to compile this project?
 
-1)  enter in src/target
-    type gcc ../bmp.c ../ip_lib.c -c -Wall -lm
+1)  stay in root directory of the project
+    type ->  gcc ./src/bmp.c ./src/ip_lib.c -c -Wall -lm 
     it creates ip_lib.o and bmp.o
 
-2)  stay in src/target
-    type gcc ../main_iplib.c ip_lib.o bmp.o -lm
+2)  stay in root directory of the project
+    type gcc ./src/main_iplib.c ip_lib.o bmp.o -Wall -ansi --pedantic -lm -g3 -O3  -std=gnu89 -Wextra
     it creates a.exe or a.out depending on Operation Sistem
-    
-3)  run a.out 
 
-copy paste examples : 
+3)  run a.out
+
+copy paste examples :
 once build has done, enter in src/target and run :
 
-Linux : 
+Linux :
 
 Emboss Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp emboss ./images_export/try_emboss.bmp 1
 
-Edge Filter : 
+Edge Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp edge ./images_export/try_edge.bmp 1
 
-Sharp Filter : 
+Sharp Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp sharp ./images_export/try_sharp.bmp 1
 
-Corrupt Filter : 
+Corrupt Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp corrupt ./images_export/try_corrupt.bmp 1 40
 
-Gaussian Filter : 
+Gaussian Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp gauss ./images_export/try_gauss.bmp 1 21 10
 
-Avg Filter : 
+Avg Filter :
 ./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp avg ./images_export/try_avg.bmp 1 5
 
 

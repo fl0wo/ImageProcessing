@@ -14,19 +14,19 @@ copy paste examples :
 once build has done, enter in src/target and run :
 
 Emboss Filter :
-./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp emboss ./images_export/try_emboss.bmp 1
+./a.exe ../images/fullmoon.bmp ../images/mongolfiere.bmp emboss ./images_export/try_emboss.bmp 1
 
 Edge Filter : 
-./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp edge ./images_export/try_edge.bmp 1
+./a.exe ../images/fullmoon.bmp ../images/mongolfiere.bmp edge ./images_export/try_edge.bmp 1
 
 Sharp Filter : 
-./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp sharp ./images_export/try_sharp.bmp 1
+./a.exe ../images/fullmoon.bmp ../images/mongolfiere.bmp sharp ./images_export/try_sharp.bmp 1
 
 Corrupt Filter : 
-./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp corrupt ./images_export/try_corrupt.bmp 1 40
+./a.exe ../images/fullmoon.bmp ../images/mongolfiere.bmp corrupt ./images_export/try_corrupt.bmp 1 40
 
 Gaussian Filter : 
-./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp gauss ./images_export/try_gauss.bmp 1 21 10
+./a.exe ../images/fullmoon.bmp ../images/mongolfiere.bmp gauss ./images_export/try_gauss.bmp 1 21 10
 
 Avg Filter : 
-./a.out ../images/fullmoon.bmp ../images/mongolfiere.bmp avg ./images_export/try_avg.bmp 1 5
+./a.exe ../images/fullmoon.bmp ../images/mongolfiere.bmp avg ./images_export/try_avg.bmp 1 5

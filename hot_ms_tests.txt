@@ -12,3 +12,4 @@ gauss took 15914 ms on 760x800 image with 10x10 filter
 
 With FastBlur of PhotoShop
 [debug] convultion filter took 410 ms on 760x800 image resolution with 10x10 filter
+[debug] convultion filter took 2410 ms on 760x800 image resolution with 21x21 filter
